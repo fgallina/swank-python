@@ -1,0 +1,7 @@
+*.db
+*.elc
+*.pyc
+*~
+.#*
+.ropeproject
+__pycache__

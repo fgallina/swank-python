@@ -4,6 +4,9 @@ import sys
 from lisp import read_lisp, write_lisp, symbol
 
 
+__all__ = ['SwankProtocol']
+
+
 class SwankProtocol(object):
     """Swank Protocol implementation for Python.
 

@@ -11,6 +11,10 @@ except ImportError:
     import socketserver
 
 
+__all__ = ['HEADER_LENGTH', 'SwankServerRequestHandler',
+           'SwankServer', 'serve']
+
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)s: %(message)s')
 
@@ -64,7 +68,6 @@ def serve(host="localhost", port=0):
 
     """
     server = SwankServer((host, port))
-    logger = logging.getLogger('serve')
     server.serve_forever()
 
 

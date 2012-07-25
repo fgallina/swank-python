@@ -33,6 +33,11 @@ class SwankServerRequestHandler(socketserver.BaseRequestHandler):
 
     def __init__(self, request, client_address, server):
         self.logger = logging.getLogger('SwankServerRequestHandler')
+        encodings = {
+            "iso-latin-1-unix": "latin-1",
+            "iso-utf-8-unix": "utf-8"
+        }
+        self.encoding = encodings.get(server.encoding, "utf-8")
         socketserver.BaseRequestHandler.__init__(
             self, request, client_address, server)
 
@@ -41,10 +46,14 @@ class SwankServerRequestHandler(socketserver.BaseRequestHandler):
         protocol = SwankProtocol(self.server.socket)
         while True:
             try:
-                length = int(self.request.recv(HEADER_LENGTH), 16)
+                raw = self.request.recv(HEADER_LENGTH)
+                self.logger.debug('raw()->"%s"', raw)
+                length = int(raw, 16)
                 data = self.request.recv(length)
                 self.logger.debug('recv()->"%s"', data)
+                data = data.decode(self.encoding)
                 ret = protocol.dispatch(data)
+                ret = ret.encode(self.encoding)
                 self.logger.debug('send()->"%s"', ret)
                 self.request.send(ret)
             except socket.timeout as e:
@@ -55,33 +64,64 @@ class SwankServerRequestHandler(socketserver.BaseRequestHandler):
 class SwankServer(socketserver.TCPServer):
     """Good ol' TCPServer using SwankServerRequestHandler as handler."""
 
-    def __init__(self, server_address, handler_class=SwankServerRequestHandler):
+    def __init__(self, server_address, handler_class=SwankServerRequestHandler,
+                 port_filename=None, encoding="utf-8"):
         self.logger = logging.getLogger('SwankServer')
+        self.port_filename = port_filename
+        self.encoding = encoding
         socketserver.TCPServer.__init__(self, server_address, handler_class)
-        self.logger.info('Serving on: {0} ({1})'.format(*self.server_address))
+        ipaddr, port = self.server_address
+        self.logger.info('Serving on: {0} ({1})'.format(ipaddr, port))
+        if port_filename:
+            with open(port_filename, 'w') as port_file:
+                self.logger.debug('Writing port_file {0}'.format(port_filename))
+                port_file.write("{0}".format(port))
 
 
-def serve(host="localhost", port=0):
+def serve(ipaddr="127.0.0.1", port=0, port_filename=None, encoding="utf-8"):
     """Start a swank server on given port.
 
     If no port is provided then let the OS choose it.
 
     """
-    server = SwankServer((host, port))
+    server = SwankServer((ipaddr, port), port_filename=port_filename,
+                         encoding=encoding)
     server.serve_forever()
 
 
 if __name__ == "__main__":
-    import sys
 
-    host = 'localhost'
+    ipaddr = "127.0.0.1"
     port = 0
+    encoding = "utf-8"
 
-    if sys.argv[1:]:
-        server_address = sys.argv[1].split(":")
-        if len(server_address) > 1:
-            host, port = server_address
-        else:
-            host = server_address[0]
+    try:
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-a", "--ipaddr", help="bind address", default=ipaddr)
+        parser.add_argument(
+            "-p", "--port", type=int, help="port", default=port)
+        parser.add_argument("-f", "--port-filename")
+        parser.add_argument("-e", "--encoding", default=encoding)
+        args = parser.parse_args()
+    except ImportError:
+        import optparse
+        parser = optparse.OptionParser()
+        parser.add_option(
+            "-a", "--ipaddr", help="bind address", default=ipaddr)
+        parser.add_option(
+            "-p", "--port", type=int, help="port", default=port)
+        parser.add_option("-f", "--port-filename")
+        parser.add_option("-e", "--encoding", default=encoding)
+        (args, _) = parser.parse_args()
 
-    serve(host, int(port))
+    ipaddr = args.ipaddr
+    port = args.port
+    port_filename = args.port_filename
+    encoding = args.encoding
+
+    logger = logging.getLogger('start')
+    logger.debug("%s", args)
+
+    serve(ipaddr, int(port), port_filename, encoding)

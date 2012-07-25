@@ -1,7 +1,8 @@
 import os
 import platform
 import sys
-from lisp import read_lisp, write_lisp, symbol
+
+from lisp import lbool, llist, lstring, read_lisp, symbol, write_lisp
 
 
 __all__ = ['SwankProtocol']
@@ -53,24 +54,36 @@ class SwankProtocol(object):
         machine = platform.machine().upper()
         version = sys.version
         pid = os.getpid()
-        host, ip_addr = self.socket.getsockname()
-        return [
-            symbol(":return"), {
-                ":ok": {
-                    ":pid": pid,
-                    ":package": {
-                        ":name": "python",
-                        ":prompt": "PYTHON"
-                    },
-                    ":lisp-implementation": {
-                        ":type": "PYTHON",
-                        ":name": "python",
-                        ":version": version
-                    }
-                }
-            },
-            self.id
-        ]
+        host, ipaddr = self.socket.getsockname()
+        return llist([
+            symbol(':return'), llist([
+                symbol(':ok'), llist([
+                    symbol(':pid'), pid, symbol(':style'), lbool(False),
+                    symbol(':encoding'), llist([
+                        symbol(':coding-systems'), llist([
+                            lstring('utf-8-unix'),
+                            lstring('iso-latin-1-unix')
+                        ])
+                    ]),
+                    symbol(':lisp-implementation'), llist([
+                        symbol(':type'), lstring('PYTHON'),
+                        symbol(':name'), lstring('python'),
+                        symbol(':version'), lstring(version),
+                        symbol(':program'), lbool(False),
+                    ]),
+                    symbol(':machine'), llist([
+                        symbol(':instance'), lstring("{0} [{1}]".format(host,ipaddr)),
+                        symbol(':type'), lstring(machine),
+                        symbol(':version'), lstring(machine)
+                    ]),
+                    symbol(':package'), llist([
+                        symbol(':name'), lstring('python'),
+                        symbol(':prompt'), lstring('PYTHON')
+                    ]),
+                    symbol(':version'), lstring('2012-07-13')
+                ])
+            ]), self.id
+        ])
 
     def swank_eval(self, string):
         """Eval string"""
@@ -84,7 +97,7 @@ class SwankProtocol(object):
         except Exception as e:
             return [
                 symbol(":debug"), 0, 1,
-                [e, nil],
+                [e, False],
                 [],
                 [],
                 self.id
@@ -99,55 +112,98 @@ class SwankProtocol(object):
     def swank_pprint_eval(self, string):
         return self.swank_eval(string)
 
-    def swank_compile_file(self, name):
+    def swank_apropos_list_for_emacs(self):
         pass
 
-    def swank_compile_string(self, form):
+    def swank_backtrace(self):
         pass
 
-    def swank_completions(self, symbol):
+    def swank_buffer_first_change(self, filename):
+        return [
+            symbol(":return"),
+            {":ok": lbool(False)},
+            self.id
+        ]
+
+    def swank_commit_edited_value(self):
         pass
 
-    def swank_create_repl(self):
+    def swank_compile_file_for_emacs(self):
         pass
 
-    def swank_debug_thread(self, index):
+    def swank_compile_multiple_strings_for_emacs(self):
         pass
 
-    def swank_describe_function(self, fn):
+    def swank_compile_string_for_emacs(self):
         pass
 
-    def swank_describe_symbol(self, symbol):
+    def swank_create_server(self):
         pass
 
-    def swank_disassemble(self, symbol):
+    def swank_debug_nth_thread(self):
         pass
 
-    def swank_eval_in_frame(self, expr, index):
+    def swank_debugger_info_for_emacs(self):
         pass
 
-    def swank_frame_call(self, frame):
+    def swank_default_directory(self):
         pass
 
-    def swank_frame_locals(self, frame):
+    def swank_describe_definition_for_emacs(self):
         pass
 
-    def swank_frame_source_loc(self, frame):
+    def swank_describe_function(self):
         pass
 
-    def swank_fuzzy_completions(self, symbol):
+    def swank_describe_symbol(self):
         pass
 
-    def swank_inspect(self, symbol):
+    def swank_disassemble_form(self):
         pass
 
-    def swank_inspect_in_frame(self, symbol, index):
+    def swank_documentation_symbol(self):
         pass
 
-    def swank_inspect_nth_part(self, index):
+    def swank_eval_and_grab_output(self):
         pass
 
-    def swank_inspector_nth_action(self, index):
+    def swank_eval_string_in_frame(self):
+        pass
+
+    def swank_find_definitions_for_emacs(self):
+        pass
+
+    def swank_flow_control_test(self):
+        pass
+
+    def swank_frame_locals_and_catch_tags(self):
+        pass
+
+    def swank_frame_package_name(self):
+        pass
+
+    def swank_frame_source_location(self):
+        pass
+
+    def swank_init_inspector(self):
+        pass
+
+    def swank_inspect_current_condition(self):
+        pass
+
+    def swank_inspect_frame_var(self):
+        pass
+
+    def swank_inspect_in_frame(self):
+        pass
+
+    def swank_inspect_nth_part(self):
+        pass
+
+    def swank_inspector_eval(self):
+        pass
+
+    def swank_inspector_history(self):
         pass
 
     def swank_inspector_pop(self):
@@ -156,73 +212,118 @@ class SwankProtocol(object):
     def swank_inspector_range(self):
         pass
 
-    def swank_interrupt(self):
+    def swank_inspector_reinspect(self):
         pass
 
-    def swank_invoke_abort(self):
+    def swank_interactive_eval(self):
         pass
 
-    def swank_invoke_continue(self):
+    def swank_interactive_eval_region(self):
         pass
 
-    def swank_invoke_restart(self, level, restart):
+    def swank_kill_nth_thread(self):
         pass
 
-    def swank_kill_thread(self, index):
+    def swank_list_all_package_names(self):
         pass
 
-    def swank_list_threads(self):
+    def swank_load_file(self):
         pass
 
-    def swank_load_file(self, name):
+    def swank_pprint_eval(self):
         pass
 
-    def swank_macroexpand(self, form):
+    def swank_pprint_eval_string_in_frame(self):
         pass
 
-    def swank_macroexpand_all(self, form):
+    def swank_pprint_inspector_part(self):
         pass
 
-    def swank_op_arglist(self, op):
+    def swank_profile_by_substring(self):
         pass
 
-    def swank_profile_report(self):
+    def swank_profile_package(self):
         pass
 
     def swank_profile_reset(self):
         pass
 
-    def swank_profile_substring(self, string, package):
-        pass
-
-    def swank_profiled_functions(self):
-        pass
-
     def swank_quit_inspector(self):
         pass
 
-    def swank_require(self, contrib):
+    def swank_quit_thread_browser(self):
         pass
 
-    def swank_return_string(self, string):
+    def swank_re_evaluate_defvar(self):
         pass
 
-    def swank_set_break(self, symbol):
+    def swank_restart_frame(self):
         pass
 
-    def swank_set_package(self, pkg):
+    def swank_set_default_directory(self):
         pass
 
-    def swank_throw_toplevel(self):
+    def swank_simple_completions(self):
         pass
 
-    def swank_toggle_profile(self, symbol):
+    def swank_sldb_abort(self):
         pass
 
-    def swank_toggle_trace(self, symbol):
+    def swank_sldb_break(self):
         pass
 
-    def swank_undefine_function(self, fn):
+    def swank_sldb_break_on_return(self):
+        pass
+
+    def swank_sldb_break_with_default_debugger(self):
+        pass
+
+    def swank_sldb_disassemble(self):
+        pass
+
+    def swank_sldb_next(self):
+        pass
+
+    def swank_sldb_out(self):
+        pass
+
+    def swank_sldb_return_from_frame(self):
+        pass
+
+    def swank_sldb_step(self):
+        pass
+
+    def swank_start_server(self):
+        pass
+
+    def swank_swank_compiler_macroexpand(self):
+        pass
+
+    def swank_swank_expand(self):
+        pass
+
+    def swank_swank_format_string_expand(self):
+        pass
+
+    def swank_swank_macroexpand(self):
+        pass
+
+    def swank_swank_macroexpand_all(self):
+        pass
+
+    def swank_throw_to_toplevel(self):
+        pass
+
+    def swank_toggle_break_on_signals(self):
+        pass
+
+    def swank_toggle_debug_on_swank_error(self):
+        pass
+
+    def swank_undefine_function(self):
+        pass
+
+    def swank_unintern_symbol(self):
         pass
 
     def swank_unprofile_all(self):
@@ -231,5 +332,14 @@ class SwankProtocol(object):
     def swank_untrace_all(self):
         pass
 
-    def swank_xref(self, fn, type):
+    def swank_update_indentation_information(self):
+        pass
+
+    def swank_value_for_editing(self):
+        pass
+
+    def swank_xref(self):
+        pass
+
+    def swank_xrefs(self):
         pass

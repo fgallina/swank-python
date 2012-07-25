@@ -1,8 +1,7 @@
 import os
 import platform
-import sys
 
-from lisp import lbool, llist, lstring, read_lisp, symbol, write_lisp
+from lisp import cons, lbool, llist, lstring, read_lisp, symbol, write_lisp
 
 
 __all__ = ['SwankProtocol']
@@ -49,10 +48,26 @@ class SwankProtocol(object):
         header = "{0:06x}".format(len(lisp_response))
         return header + lisp_response
 
+    def indentation_update(self):
+        response = [symbol(":indentation-update"), [
+            cons("def", 1),
+            cons("class", 1),
+            cons("if", 1),
+            cons("else", 1),
+            cons("while", 1),
+            cons("for", 1),
+            cons("try", 1),
+            cons("except", 1),
+            cons("finally", 1)
+        ]]
+        lisp_response = write_lisp(response)
+        header = "{0:06x}".format(len(lisp_response))
+        return header + lisp_response
+
     def swank_connection_info(self):
         """Return connection info available"""
         machine = platform.machine().upper()
-        version = sys.version
+        version = platform.python_version()
         pid = os.getpid()
         host, ipaddr = self.socket.getsockname()
         return llist([
@@ -78,7 +93,7 @@ class SwankProtocol(object):
                     ]),
                     symbol(':package'), llist([
                         symbol(':name'), lstring('python'),
-                        symbol(':prompt'), lstring('PYTHON')
+                        symbol(':prompt'), lstring('python')
                     ]),
                     symbol(':version'), lstring('2012-07-13')
                 ])

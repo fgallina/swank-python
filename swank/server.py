@@ -15,8 +15,7 @@ __all__ = ['HEADER_LENGTH', 'SwankServerRequestHandler',
            'SwankServer', 'serve']
 
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(name)s: %(message)s')
+logging.basicConfig(level=logging.DEBUG)
 
 
 HEADER_LENGTH = 6
@@ -44,6 +43,7 @@ class SwankServerRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
         self.logger.debug('handle')
         protocol = SwankProtocol(self.server.socket)
+        first = True
         while True:
             try:
                 raw = self.request.recv(HEADER_LENGTH)
@@ -51,11 +51,19 @@ class SwankServerRequestHandler(socketserver.BaseRequestHandler):
                 length = int(raw, 16)
                 data = self.request.recv(length)
                 self.logger.debug('recv()->"%s"', data)
+
+                if first:
+                    ret = protocol.indentation_update()
+                    ret = ret.encode(self.encoding)
+                    self.logger.debug('send()->"%s"', ret)
+                    self.request.send(ret)
+
                 data = data.decode(self.encoding)
                 ret = protocol.dispatch(data)
                 ret = ret.encode(self.encoding)
                 self.logger.debug('send()->"%s"', ret)
-                self.request.send(ret)
+                self.request.send(ret + "\n")
+                first = False
             except socket.timeout as e:
                 self.logger.error('Socket error', e)
                 break

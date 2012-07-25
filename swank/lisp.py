@@ -229,8 +229,11 @@ class LispWritter(object):
         self.value = value
 
     def to_lisp_string(self, obj):
-        if isinstance(obj, (cons, lbool, llist, lstring, quoted, symbol)):
+        if isinstance(obj, (lbool, llist, lstring, quoted, symbol)):
             return str(obj)
+        elif isinstance(obj, cons):
+            return ''.join(["(", self.to_lisp_string(obj.car), " . ",
+                            self.to_lisp_string(obj.cdr), ")"])
         elif isinstance(obj, str):
             return '"' + str(obj) + '"'
         elif isinstance(obj, (float, int)):

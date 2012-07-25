@@ -23,6 +23,10 @@ class ReaderWritterTests(unittest.TestCase):
 
     def test_read_write(self):
 
+        code = """("a" . 1)"""
+        expected = cons(lstring("a"), 1)
+        self._test(code, expected)
+
         code = """
         (:emacs-rex
           (swank:connection-info
@@ -155,7 +159,6 @@ class ReaderWritterTests(unittest.TestCase):
             ]), 1
         ])
         self._test(code, expected)
-
 
 
 def main():

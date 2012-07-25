@@ -14,9 +14,7 @@ except ImportError:
 
 class ReaderWritterTests(unittest.TestCase):
 
-    # def __init__(self, *args, **kwargs):
-    #     super(ReaderWritterTests, self).__init__(*args, **kwargs)
-    #     self.maxDiff = None
+    maxDiff = None
 
     def _test(self, code, expected):
         parsed = read_lisp(code)

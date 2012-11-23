@@ -25,13 +25,14 @@ class SwankProtocol(object):
 
     """
 
-    def __init__(self, socket):
+    def __init__(self, socket, prompt="Python>"):
         self.globals = {}
         self.locals = {}
         self.package = None,
         self.thread = True,
         self.id = 0
         self.socket = socket
+        self.prompt = prompt
 
     def dispatch(self, data):
         """Parses an :emacs-rex command an returns lisp response."""
@@ -93,7 +94,7 @@ class SwankProtocol(object):
                     ]),
                     symbol(':package'), llist([
                         symbol(':name'), lstring('python'),
-                        symbol(':prompt'), lstring('python')
+                        symbol(':prompt'), self.prompt
                     ]),
                     symbol(':version'), lstring('2012-07-13')
                 ])

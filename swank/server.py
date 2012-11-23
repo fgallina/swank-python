@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
 import logging
 import socket
 import sys
 
-from protocol import SwankProtocol
+from threading import Thread
+
 from lisp import LispReader
+from protocol import SwankProtocol
+from repl import repl
 
 
 # Python 3 support
@@ -21,6 +25,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 HEADER_LENGTH = 6
+PROMPT = "Python> "
+LOCALS = {"__name__": "__console__", "__doc__": None}
 
 
 class SwankServerRequestHandler(socketserver.BaseRequestHandler):
@@ -38,38 +44,40 @@ class SwankServerRequestHandler(socketserver.BaseRequestHandler):
             "iso-utf-8-unix": "utf-8"
         }
         self.encoding = encodings.get(server.encoding, "utf-8")
+        self.protocol = SwankProtocol(
+            server.socket, locals=LOCALS, prompt=PROMPT
+        )
         socketserver.BaseRequestHandler.__init__(
             self, request, client_address, server)
 
     def handle(self):
         logger.debug('handle')
         first = True
-        protocol = SwankProtocol(self.server.socket)
         while True:
             try:
-                logger.debug('stdin()->"%s"', raw_input())
                 raw = self.request.recv(HEADER_LENGTH)
                 logger.debug('raw()->"%s"', raw)
                 if raw:
                     length = int(raw, 16)
                 else:
-                    continue
+                    logger.error('Empty header received')
+                    self.request.close()
+                    break;
                 data = self.request.recv(length)
                 logger.debug('recv()->"%s"', data)
 
                 if first:
-                    ret = protocol.indentation_update()
+                    ret = self.protocol.indentation_update()
                     ret = ret.encode(self.encoding)
                     logger.debug('send()->"%s"', ret)
                     self.request.send(ret)
 
                 data = data.decode(self.encoding)
-                ret = protocol.dispatch(data)
+                ret = self.protocol.dispatch(data)
                 ret = ret.encode(self.encoding)
                 self.request.send(ret)
                 logger.debug('send()->"%s"', ret)
                 first = False
-                sys.stderr.write(protocol.prompt)
             except socket.timeout as e:
                 logger.error('Socket error', e)
                 break
@@ -100,6 +108,20 @@ def serve(ipaddr="127.0.0.1", port=0, port_filename=None, encoding="utf-8"):
     server = SwankServer((ipaddr, port), port_filename=port_filename,
                          encoding=encoding)
     server.serve_forever()
+
+
+def swank_process(ipaddr="127.0.0.1", port=0, port_filename=None, encoding="utf-8"):
+    server = Thread(
+        target=serve, args=(ipaddr, port, port_filename, encoding)
+    )
+    server.start()
+    server.join(3)
+    console = Thread(
+        target=repl, kwargs=dict(prompt=PROMPT, locals=LOCALS,
+                                 stdin=sys.stdin, stderr=sys.stderr)
+    )
+    console.start()
+    console.join()
 
 
 def main(read_input=False):
@@ -163,7 +185,9 @@ def main(read_input=False):
         'encoding': encoding
     })
 
-    serve(ipaddr, int(port), port_filename, encoding)
+    swank_process(ipaddr, int(port), port_filename, encoding)
+    # serve(ipaddr, int(port), port_filename, encoding)
+
 
 if __name__ == "__main__":
     main()

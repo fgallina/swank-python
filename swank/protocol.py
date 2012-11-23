@@ -1,3 +1,4 @@
+import logging
 import os
 import platform
 
@@ -5,6 +6,7 @@ from lisp import cons, lbool, llist, lstring, read_lisp, symbol, write_lisp
 
 
 __all__ = ['SwankProtocol']
+logger = logging.getLogger(__name__)
 
 
 class SwankProtocol(object):
@@ -25,11 +27,10 @@ class SwankProtocol(object):
 
     """
 
-    def __init__(self, socket, prompt="Python>"):
-        self.globals = {}
-        self.locals = {}
-        self.package = None,
-        self.thread = True,
+    def __init__(self, socket, locals=None, prompt="Python> "):
+        self.locals = locals or {}
+        self.package = None
+        self.thread = True
         self.id = 0
         self.socket = socket
         self.prompt = prompt
@@ -43,8 +44,8 @@ class SwankProtocol(object):
         fn = form[0];
         args = form[1:]
         method_name = fn.replace(":", "_").replace("-", "_")
-        method = getattr(self, method_name)
-        response = method(*args)
+        logger.debug(args)
+        response = getattr(self, method_name)(*args)
         lisp_response = write_lisp(response)
         header = "{0:06x}".format(len(lisp_response))
         return header + lisp_response
@@ -104,9 +105,10 @@ class SwankProtocol(object):
     def swank_eval(self, string):
         """Eval string"""
         try:
-            exec((compile(string, '<string>', 'exec')), self.globals)
+            exec string in self.locals
+            logger.debug(self.locals)
             return [
-                ":return",
+                symbol(":return"),
                 {":ok": string.splitlines()[0]},
                 self.id
             ]
@@ -229,12 +231,6 @@ class SwankProtocol(object):
         pass
 
     def swank_inspector_reinspect(self):
-        pass
-
-    def swank_interactive_eval(self):
-        pass
-
-    def swank_interactive_eval_region(self):
         pass
 
     def swank_kill_nth_thread(self):

@@ -45,7 +45,19 @@ class SwankProtocol(object):
         args = form[1:]
         method_name = fn.replace(":", "_").replace("-", "_")
         logger.debug(args)
-        response = getattr(self, method_name)(*args)
+        for i, arg in enumerate(args):
+            if hasattr(arg, 'unquote'):
+                args[i] = arg.unquote()
+        try:
+            response = getattr(self, method_name)(*args)
+        except Exception as e:
+            return [
+                symbol(":debug"), 0, 1,
+                [e, False],
+                [],
+                [],
+                self.id
+            ]
         lisp_response = write_lisp(response)
         header = "{0:06x}".format(len(lisp_response))
         return header + lisp_response
@@ -104,22 +116,12 @@ class SwankProtocol(object):
 
     def swank_eval(self, string):
         """Eval string"""
-        try:
-            exec string in self.locals
-            logger.debug(self.locals)
-            return [
-                symbol(":return"),
-                {":ok": string.splitlines()[0]},
-                self.id
-            ]
-        except Exception as e:
-            return [
-                symbol(":debug"), 0, 1,
-                [e, False],
-                [],
-                [],
-                self.id
-            ]
+        exec((compile(string, '<string>', 'exec')), self.locals)
+        return [
+            symbol(":return"),
+            {":ok": "Evaled region"},
+            self.id
+        ]
 
     def swank_interactive_eval(self, string):
         return self.swank_eval(string)

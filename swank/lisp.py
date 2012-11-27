@@ -206,6 +206,9 @@ class LispReader(object):
         self.char_pos = starting_pos + 1
         char = self.current_char()
         prev_char = self.prev_char()
+        if (self.prev_char() == '"' and
+            self.char_at_pos(self.char_pos - 2) == '"'):
+            return lstring("")
         while char != '"' or (char == '"' and prev_char == '\\'):
             try:
                 self.char_pos += 1

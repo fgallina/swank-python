@@ -67,6 +67,10 @@ class lstring(str):
     def __str__(self):
         return '"' + self + '"'
 
+    def unquote(self):
+        """Unquote lisp string so it's python formatted."""
+        return (r'' + self).replace(r'\"', r'"')
+
 
 class quoted(llist):
     """Simple list type representing a quoted lisp list."""

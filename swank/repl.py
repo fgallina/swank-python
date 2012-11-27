@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 import logging
 import sys
 
+import logconfig
 from code import InteractiveConsole
 
 
+logconfig.configure()
 logger = logging.getLogger(__name__)
 
 

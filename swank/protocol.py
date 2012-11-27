@@ -1,11 +1,16 @@
+# -*- coding: utf-8 -*-
 import logging
 import os.path
 import platform
 
+import logconfig
 from lisp import cons, lbool, llist, lstring, read_lisp, symbol, write_lisp
 
 
 __all__ = ['SwankProtocol']
+
+
+logconfig.configure()
 logger = logging.getLogger(__name__)
 
 

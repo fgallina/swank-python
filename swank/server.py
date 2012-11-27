@@ -2,18 +2,18 @@
 import logging
 import socket
 import sys
-
 from threading import Thread
 
+import logconfig
 from lisp import LispReader
 from protocol import SwankProtocol
 from repl import repl
 
 
-# Python 3 support
 try:
     import SocketServer as socketserver
 except ImportError:
+    # Python 3 support
     import socketserver
 
 
@@ -21,7 +21,7 @@ __all__ = ['HEADER_LENGTH', 'SwankServerRequestHandler',
            'SwankServer', 'serve']
 
 
-logging.basicConfig(level=logging.DEBUG)
+logconfig.configure()
 logger = logging.getLogger(__name__)
 
 HEADER_LENGTH = 6

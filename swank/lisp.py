@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
 import logging
 import re
+
+import logconfig
 
 
 __all__ = ['BOOL_PATTERN', 'NUMBER_PATTERN', 'cons', 'lbool', 'llist',
@@ -7,9 +10,8 @@ __all__ = ['BOOL_PATTERN', 'NUMBER_PATTERN', 'cons', 'lbool', 'llist',
            'LispWritter', 'read_lisp', 'write_lisp']
 
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(name)s: %(message)s')
-
+logconfig.configure()
+logger = logging.getLogger(__name__)
 
 BOOL_PATTERN = re.compile(r"^('?t|'?nil)\b")
 NUMBER_PATTERN = re.compile(r"^([0-9]+(\.[0-9]+)?)\b[^.]")
@@ -100,7 +102,6 @@ class LispReader(object):
     def __init__(self, code):
         self.code = code
         self.char_pos = 0
-        self.logger = logging.getLogger('LispReader')
 
     def char_at_pos(self, pos):
         try:
@@ -139,7 +140,7 @@ class LispReader(object):
             else:
                 return self.read_symbol()
         except Exception as e:
-            self.logger.debug("Parsing failed at: %s", self.remaining_code())
+            logger.debug("Parsing failed at: %s", self.remaining_code())
             raise
 
     def read_bool(self):

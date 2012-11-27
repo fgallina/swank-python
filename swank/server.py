@@ -144,8 +144,10 @@ def main(read_input=False):
         #  (funcall (read-from-string "swank-loader:init"))
         #  (funcall (read-from-string "swank:start-server") "/tmp/slime.9999"))
         # This parses it and retrieves the port file to start the connection.
-        read = globals().get('raw_input', input)  # XXX: Compatibility hack.
-        setup = LispReader(read()).read()
+        try:
+            setup = LispReader(raw_input()).read()
+        except NameError:
+            setup = LispReader(input()).read()
         if setup:
             port_filename = setup[-1][-1]
     except:
@@ -185,9 +187,7 @@ def main(read_input=False):
         'port_filename': port_filename,
         'encoding': encoding
     })
-
     swank_process(ipaddr, int(port), port_filename, encoding)
-    # serve(ipaddr, int(port), port_filename, encoding)
 
 
 if __name__ == "__main__":

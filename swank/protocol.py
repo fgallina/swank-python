@@ -1,5 +1,5 @@
 import logging
-import os
+import os.path
 import platform
 
 from lisp import cons, lbool, llist, lstring, read_lisp, symbol, write_lisp
@@ -44,12 +44,17 @@ class SwankProtocol(object):
         fn = form[0];
         args = form[1:]
         method_name = fn.replace(":", "_").replace("-", "_")
+        logger.debug(method_name)
         logger.debug(args)
         for i, arg in enumerate(args):
             if hasattr(arg, 'unquote'):
                 args[i] = arg.unquote()
         try:
-            response = getattr(self, method_name)(*args)
+            response = [
+                symbol(":return"),
+                {":ok": getattr(self, method_name)(*args)},
+                self.id
+            ]
         except Exception as e:
             return [
                 symbol(":debug"), 0, 1,
@@ -117,11 +122,7 @@ class SwankProtocol(object):
     def swank_eval(self, string):
         """Eval string"""
         exec((compile(string, '<string>', 'exec')), self.locals)
-        return [
-            symbol(":return"),
-            {":ok": "Evaled region"},
-            self.id
-        ]
+        return "Evaled region"
 
     def swank_interactive_eval(self, string):
         return self.swank_eval(string)
@@ -131,6 +132,27 @@ class SwankProtocol(object):
 
     def swank_pprint_eval(self, string):
         return self.swank_eval(string)
+
+    def swank_simple_completions(self, string, trash):
+        try:
+            import readline
+        except ImportError:
+            return [[], string]
+        else:
+            import rlcompleter
+            readline.set_completer(rlcompleter.Completer().complete)
+            completions = []
+            try:
+                i = 0
+                while True:
+                    res = readline.get_completer()(string, i)
+                    if not res: break
+                    i += 1
+                    completions.append(res)
+            except NameError:
+                pass
+            newinput = os.path.commonprefix(completions)
+            return [[completions], newinput]
 
     def swank_apropos_list_for_emacs(self):
         pass
@@ -275,9 +297,6 @@ class SwankProtocol(object):
         pass
 
     def swank_set_default_directory(self):
-        pass
-
-    def swank_simple_completions(self):
         pass
 
     def swank_sldb_abort(self):

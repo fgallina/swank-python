@@ -124,6 +124,9 @@ class SwankProtocol(object):
             ]), self.id
         ])
 
+    def swank_buffer_first_change(self, filename):
+        return lbool(False)
+
     def swank_eval(self, string):
         """Eval string"""
         exec((compile(string, '<string>', 'exec')), self.locals)
@@ -164,13 +167,6 @@ class SwankProtocol(object):
 
     def swank_backtrace(self):
         pass
-
-    def swank_buffer_first_change(self, filename):
-        return [
-            symbol(":return"),
-            {":ok": lbool(False)},
-            self.id
-        ]
 
     def swank_commit_edited_value(self):
         pass
